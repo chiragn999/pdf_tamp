@@ -1,6 +1,7 @@
 import PyPDF2
 import re
 import datetime
+from flask import Flask, request, jsonify
 
 def convert_pdf_date_string(pdf_date_string):
     # Convert PDF date string to a Python datetime object
@@ -32,6 +33,17 @@ def get_pdf_metadata(pdf_path):
     except Exception as e:
         print(f"Error: {e}")
 
+app = Flask(__name__)
 
-pdf_path = r"C:\Users\chira\Desktop\cv.pdf"
-get_pdf_metadata(pdf_path)
+@app.route('/authenticate', methods=['POST'])
+def authenticate():
+    auth_data = request.json
+    username = auth_data.get('username')
+    password = auth_data.get('password')
+    if username == 'chirag' and password == 'chirag':
+        return jsonify({"message": "Authentication successful"}), 200
+    else:
+        return jsonify({"message": "Authentication failed"}), 401
+
+if __name__ == '__main__':
+    app.run(debug=True)
