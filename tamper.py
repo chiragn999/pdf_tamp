@@ -1,6 +1,14 @@
+Here's the combined code with the original functionality and the added FastAPI endpoint for uploading PDF files:
+
+```python
 import PyPDF2
 import re
 import datetime
+import io
+from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import JSONResponse
+
+app = FastAPI()
 
 def convert_pdf_date_string(pdf_date_string):
     # Convert PDF date string to a Python datetime object
@@ -32,6 +40,31 @@ def get_pdf_metadata(pdf_path):
     except Exception as e:
         print(f"Error: {e}")
 
+@app.post("/upload")
+async def upload_pdf(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        pdf_stream = io.BytesIO(contents)
+        pdf_reader = PyPDF2.PdfFileReader(pdf_stream)
 
-pdf_path = r"C:\Users\chira\Desktop\cv.pdf"
-get_pdf_metadata(pdf_path)
+        # Get document info
+        document_info = pdf_reader.getDocumentInfo()
+
+        # Get creation and modification dates
+        created_date = document_info.get('/CreationDate')
+        modified_date = document_info.get('/ModDate')
+
+        # Convert timestamp to a human-readable format
+        created_date_str = convert_pdf_date_string(created_date).strftime("%Y-%m-%d %H:%M:%S") if created_date else None
+        modified_date_str = convert_pdf_date_string(modified_date).strftime("%Y-%m-%d %H:%M:%S") if modified_date else None
+
+        return JSONResponse(content={
+            "Created Date": created_date_str,
+            "Modified Date": modified_date_str
+        })
+
+    except Exception as e:
+        return JSONResponse(content={"Error": str(e)}, status_code=500)
+```
+
+This combined code includes the original functionality for extracting PDF metadata and the added FastAPI endpoint for uploading PDF files and retrieving their metadata.
